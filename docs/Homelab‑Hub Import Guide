@@ -1,0 +1,194 @@
+📘 Homelab‑Hub Import Guide
+The unofficial, actually accurate documentation — reverse‑engineered from real behavior.
+Homelab‑Hub includes an import/export feature, but the backend schema is undocumented and differs significantly from the UI.
+This guide documents the real, working, tested import format based on live behavior.
+If you’re getting 500 errors during import, this guide is the fix.
+---
+🚨 Critical Behaviors You Must Know
+1. Imports replace the entire database
+Every import wipes all existing:
+hardware
+vms
+apps
+networks
+storage
+misc
+documents
+There is no merge mode.
+You must import a complete dataset every time.
+---
+2. IDs are not global
+Each category has its own ID space:
+hardware.id starts at 1
+vms.id starts at 1
+apps.id starts at 1
+networks.id starts at 1
+
+IDs must be sequential and start at 1.
+---
+3. Cross‑references must use these IDs
+Example:
+"vm_id": 1
+"hardware_id": 1
+
+If you reference a VM ID that doesn’t exist, import fails.
+---
+4. Missing fields = 500 error
+5. Extra fields = 500 error
+The backend is extremely strict.
+If a field is:
+missing
+renamed
+added
+null when it expects a string
+string when it expects null
+…the import fails with a 500.
+---
+6. Null handling is strict
+These fields must be null:
+notes
+external_hostname
+hardware_id (for apps)
+These fields must not be empty strings.
+---
+7. Timestamps must include microseconds
+Example:
+2026-06-15T19:27:06.299773
+
+If you omit microseconds → 500.
+---
+8. Hardware import is the most fragile
+The UI shows fields the backend does not store.
+The backend stores fields the UI does not show.
+You must match the backend schema exactly.
+---
+🧩 Real Backend Schemas
+These schemas were extracted from real exports and are guaranteed to import correctly.
+---
+Hardware Schema
+{
+  "id": 1,
+  "name": "Threadripper-Node",
+  "hostname": "threadripper",
+  "ip_address": "10.1.10.2",
+  "mac_address": "00:00:00:00:00:00",
+  "os": "Proxmox",
+  "cpu": "Threadripper",
+  "cpu_cores": 16,
+  "ram_gb": 128,
+  "make": "AMD",
+  "model": "Threadripper",
+  "serial_number": "N/A",
+  "location": "Rack",
+  "icon": "",
+  "notes": null,
+  "created_at": "2026-06-15T19:27:06.299773",
+  "updated_at": "2026-06-15T19:27:06.299776"
+}
+
+---
+VM Schema
+{
+  "id": 1,
+  "name": "Docker-VM",
+  "hostname": "docker-vm",
+  "ip_address": "10.1.10.10",
+  "os": "Ubuntu",
+  "cpu_cores": 8,
+  "ram_gb": 32,
+  "disk_gb": 512,
+  "mac_address": null,
+  "hardware_id": 1,
+  "icon": "",
+  "notes": null,
+  "created_at": "2026-06-15T19:38:24.992591",
+  "updated_at": "2026-06-15T19:38:24.992593"
+}
+
+---
+App Schema
+{
+  "id": 1,
+  "name": "adminer",
+  "description": "adminer",
+  "hostname": "docker-vm",
+  "ip_address": "10.1.10.10",
+  "port": 9001,
+  "external_hostname": null,
+  "hardware_id": null,
+  "vm_id": 1,
+  "https": false,
+  "icon": "",
+  "notes": null,
+  "created_at": "2026-06-15T20:00:00.000001",
+  "updated_at": "2026-06-15T20:00:00.000001"
+}
+
+---
+Network Schema
+{
+  "id": 1,
+  "name": "Trusted",
+  "subnet": "10.1.10.0/24",
+  "gateway": "10.1.10.1",
+  "dns_servers": "10.1.10.4",
+  "vlan_id": 10,
+  "color": "#50ed8c",
+  "notes": null,
+  "created_at": "2026-06-15T19:40:30.025971",
+  "updated_at": "2026-06-15T19:40:30.025974"
+}
+
+---
+🧪 Working Example: Minimal Valid Import
+This is the smallest possible import file that will load successfully:
+{
+  "apps": [],
+  "documents": [],
+  "hardware": [],
+  "misc": [],
+  "networks": [],
+  "storage": [],
+  "vms": []
+}
+
+Even this must be valid JSON with no trailing commas.
+---
+🧱 Full Example: Docker‑VM + Apps + Hardware
+This is the exact structure that successfully imported a full Docker‑VM with 38 apps.
+(You can include your full JSON here if you want it public.)
+---
+🛠 Troubleshooting
+500 error on import
+JSON not closed properly
+Trailing comma
+Missing microseconds
+Wrong null type
+Missing required field
+Extra field not in schema
+ID references a non‑existent VM/hardware
+Hardware won’t import
+You used UI fields the backend doesn’t store
+You omitted backend‑only fields
+You used empty strings instead of null
+Timestamp format wrong
+Apps won’t import
+vm_id doesn’t exist
+hardware_id is not null
+external_hostname is not null
+IDs don’t start at 1
+---
+🧭 Recommendations
+Always export first to see the real schema
+Never trust the UI fields
+Build imports category‑by‑category
+Validate JSON with a linter
+Keep IDs small and sequential
+Use null instead of empty strings
+Include microseconds in timestamps
+---
+🤝 Contributing
+If you discover additional quirks or schema variations, open an issue or PR so others don’t have to reverse‑engineer the importer from scratch.
+---
+✔ License
+MIT
