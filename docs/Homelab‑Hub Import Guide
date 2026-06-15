@@ -156,7 +156,6 @@ Even this must be valid JSON with no trailing commas.
 ---
 🧱 Full Example: Docker‑VM + Apps + Hardware
 This is the exact structure that successfully imported a full Docker‑VM with 38 apps.
-(You can include your full JSON here if you want it public.)
 ---
 🛠 Troubleshooting
 500 error on import
