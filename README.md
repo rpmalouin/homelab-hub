@@ -418,3 +418,5 @@ All endpoints are prefixed with `/api/`.
 ## License
 
 MIT
+
+See DOCS for more
